@@ -1,0 +1,9 @@
+
+# Object Detection Tutorial
+
+
+ultralytics
+cv2
+numpy
+distinctipy
+
