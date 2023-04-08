@@ -25,7 +25,7 @@ class BoxDrawer:
         self.black = (0, 0, 0)
 
         if threshold is None:
-            self.threshold = 225 * .5
+            self.threshold = 225 * 0.5
         else:
             self.threshold = threshold
 

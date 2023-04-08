@@ -38,5 +38,3 @@ if __name__ == '__main__':
     dir_yolo_version_v = os.path.join(dir_yolo_parameters, name_yolo_version_v)
 
     download(name_model=name_yolo_version_v, dir_file=dir_yolo_version_v)
-
-
