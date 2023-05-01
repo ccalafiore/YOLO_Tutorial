@@ -3,7 +3,6 @@
 
 
 ultralytics
-cv2
 numpy
-distinctipy
-
+calapy>=0.1.16.1
+cv2
