@@ -4,6 +4,7 @@ from ultralytics import YOLO
 import cv2
 from distinctipy import distinctipy
 import numpy as np
+import utilities
 
 
 class BoxDrawer:
@@ -70,8 +71,7 @@ class BoxDrawer:
 if __name__ == '__main__':
 
     dir_script = __file__
-    dir_step = os.path.dirname(dir_script)
-    dir_project = os.path.dirname(dir_step)
+    dir_project = os.path.dirname(dir_script)
     dir_data = os.path.join(dir_project, 'data')
 
     name_images = [
@@ -84,17 +84,16 @@ if __name__ == '__main__':
     dir_input_images = os.path.join(dir_images, 'input_images')
     dir_image_i = os.path.join(dir_input_images, name_image_i)
 
-    dir_yolo_parameters = os.path.join(dir_data, 'yolo_parameters')
-    name_yolo_versions = ['yolov8n.pt', 'yolov8l.pt']
-    v = 1
+    dir_yolos = os.path.join(dir_data, 'yolos')
+    name_yolo_versions = ['yolov8n.pt', 'yolov8s.pt', 'yolov8m.pt', 'yolov8l.pt', 'yolov8x.pt']
+    v = 0
     name_yolo_version_v = name_yolo_versions[v]
-    dir_yolo_version_v = os.path.join(dir_yolo_parameters, name_yolo_version_v)
+    dir_yolo_version_v = os.path.join(dir_yolos, name_yolo_version_v)
 
-    # todo: download yolo if it does not exist
-    # if not os.path.exists(dir_yolo_version_v):
-    #     cp.ml.models.yolo.download()
-
-    yolo_v = YOLO(dir_yolo_version_v)
+    if os.path.exists(dir_yolo_version_v):
+        yolo_v = YOLO(dir_yolo_version_v)
+    else:
+        yolo_v = utilities.download(name_model=name_yolo_version_v, dir_file=dir_yolo_version_v)
 
     results = yolo_v(source=dir_image_i)
 
@@ -103,8 +102,8 @@ if __name__ == '__main__':
     image_i = cv2.imread(dir_image_i)
 
     box_drawer(yolo_results=results, image=image_i)
-
-    dir_out_images = os.path.join(dir_images, 'output_images')
+    a = name_yolo_version_v.removesuffix('.pt')
+    dir_out_images = os.path.join(dir_images, 'output_images', name_yolo_version_v.removesuffix('.pt'))
     os.makedirs(name=dir_out_images, exist_ok=True)
 
     dir_out_image_i = os.path.join(dir_out_images, name_image_i)
