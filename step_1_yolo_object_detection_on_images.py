@@ -1,110 +1,46 @@
 
 import os
-from ultralytics import YOLO
 import cv2
-from distinctipy import distinctipy
-import numpy as np
+from ultralytics import YOLO
 import utilities
 
 
-class BoxDrawer:
+root_script = __file__
+root_project = os.path.dirname(root_script)
+root_data = os.path.join(root_project, 'data')
 
-    def __init__(self, names, colors=None, threshold=None):
+root_images = os.path.join(root_data, 'images')
+root_input_images = os.path.join(root_images, 'input_images')
 
-        self.names = names
-        self.K = len(self.names)
+name_input_images = [
+    'bus_rapid_transit.jpg', 'people_cars_bicycles_1.jpg', 'people_cars_bicycles_2.jpg', 'dino_1.jpg',
+    'amici_dispersi.jpg', 'trial.jpg', 'dinner.jpg']
 
-        if colors is None:
-            # generate N visually distinct colours
-            self.colors = [
-                tuple(color_c[::-1]) for color_c in
-                (np.asarray(distinctipy.get_colors(self.K), dtype='f') * 225).astype('i').tolist()]
-        else:
-            self.colors = colors
-
-        self.white = (225, 225, 255)
-        self.black = (0, 0, 0)
-
-        if threshold is None:
-            self.threshold = 225 * 0.5
-        else:
-            self.threshold = threshold
-
-        self.text_colors = [None for k in range(0, self.K, 1)]  # type: list
-
-        for k, color_k in enumerate(iterable=self.colors, start=0):
-
-            mean_k = sum(color_k) / len(color_k)
-            if mean_k < self.threshold:
-                color_text_k = self.white
-            else:
-                color_text_k = self.black
-
-            self.text_colors[k] = color_text_k
-
-    def __call__(self, yolo_results, image):
-
-        boxes = yolo_results[0].boxes
-
-        for b, box_b in enumerate(iterable=boxes, start=0):
-
-            class_b = box_b.cls[0].int().tolist()
-
-            x1, y1, x2, y2 = box_b.xyxy[0].int().tolist()
-            cv2.rectangle(image, (x1, y1), (x2, y2), self.colors[class_b], 2)
-
-            name_b = self.names[class_b]
-            conf_b = box_b.conf[0].tolist()
-            label_b = f"{name_b}: {conf_b * 100:.0f}%"
-
-            # Get the size of the text
-            text_size_b = cv2.getTextSize(label_b, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
-            # Draw a filled rectangle to put the text on
-            cv2.rectangle(image, (x1, y1 - text_size_b[1] - 4), (x1 + text_size_b[0] + 4, y1), self.colors[class_b], -1)
-
-            # Put the text on the image
-            cv2.putText(image, label_b, (x1 + 2, y1 - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, self.text_colors[class_b], 1)
-
-        return image
+I = len(name_input_images)
+dir_input_images = [os.path.join(root_input_images, name_i) for name_i in name_input_images]
 
 
-if __name__ == '__main__':
+root_yolos = os.path.join(root_data, 'yolos')
+name_yolo_versions = ['yolov8n.pt', 'yolov8s.pt', 'yolov8m.pt', 'yolov8l.pt', 'yolov8x.pt']
+v = 0
+name_yolo_version_v = name_yolo_versions[v]
+dir_yolo_version_v = os.path.join(root_yolos, name_yolo_version_v)
 
-    dir_script = __file__
-    dir_project = os.path.dirname(dir_script)
-    dir_data = os.path.join(dir_project, 'data')
+if os.path.exists(dir_yolo_version_v):
+    yolo_v = YOLO(dir_yolo_version_v)
+else:
+    yolo_v = utilities.download(name_model=name_yolo_version_v, dir_file=dir_yolo_version_v)
 
-    name_images = [
-        'bus_rapid_transit.jpg', 'people_cars_bicycles_1.jpg', 'people_cars_bicycles_2.jpg', 'dino_1.jpg',
-        'amici_dispersi.jpg', 'trial.jpg', 'dinner.jpg']
+results_v = yolo_v(source=dir_input_images)
 
-    i_image = 6
-    name_image_i = name_images[i_image]
-    dir_images = os.path.join(dir_data, 'images')
-    dir_input_images = os.path.join(dir_images, 'input_images')
-    dir_image_i = os.path.join(dir_input_images, name_image_i)
+box_drawer = utilities.BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(255 * .5))
 
-    dir_yolos = os.path.join(dir_data, 'yolos')
-    name_yolo_versions = ['yolov8n.pt', 'yolov8s.pt', 'yolov8m.pt', 'yolov8l.pt', 'yolov8x.pt']
-    v = 0
-    name_yolo_version_v = name_yolo_versions[v]
-    dir_yolo_version_v = os.path.join(dir_yolos, name_yolo_version_v)
+root_out_images = os.path.join(root_images, 'output_images', name_yolo_version_v.removesuffix('.pt'))
+os.makedirs(name=root_out_images, exist_ok=True)
+dir_out_images = [os.path.join(root_out_images, name_i) for name_i in name_input_images]
 
-    if os.path.exists(dir_yolo_version_v):
-        yolo_v = YOLO(dir_yolo_version_v)
-    else:
-        yolo_v = utilities.download(name_model=name_yolo_version_v, dir_file=dir_yolo_version_v)
+out_images = [None for i in range(0, I, 1)]
+for i in range(0, I, 1):
+    out_images[i] = box_drawer(
+        boxes=results_v[i].boxes, input_image=dir_input_images[i], dir_out_image=dir_out_images[i])
 
-    results = yolo_v(source=dir_image_i)
-
-    box_drawer = BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(225 * .5))
-
-    image_i = cv2.imread(dir_image_i)
-
-    box_drawer(yolo_results=results, image=image_i)
-    a = name_yolo_version_v.removesuffix('.pt')
-    dir_out_images = os.path.join(dir_images, 'output_images', name_yolo_version_v.removesuffix('.pt'))
-    os.makedirs(name=dir_out_images, exist_ok=True)
-
-    dir_out_image_i = os.path.join(dir_out_images, name_image_i)
-    cv2.imwrite(filename=dir_out_image_i, img=image_i)
