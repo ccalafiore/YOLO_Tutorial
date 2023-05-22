@@ -6,15 +6,15 @@ import numpy as np
 from ultralytics import YOLO
 
 
-def download(name_model, dir_file=None):
+def download(name, dir_file=None):
 
     tmp_dir_root = os.getcwd()
-    tmp_dir_model = os.path.join(tmp_dir_root, name_model)
+    tmp_dir_model = os.path.join(tmp_dir_root, name)
 
     if os.path.exists(tmp_dir_model):
         os.remove(tmp_dir_model)
 
-    yolo = YOLO(name_model)
+    yolo = YOLO(name)
 
     if dir_file is not None:
         if os.path.exists(dir_file):
@@ -89,3 +89,39 @@ class BoxDrawer:
             cv2.imwrite(filename=dir_out_image, img=image)
 
         return image
+
+
+def load_yolo(**kwargs):
+
+    """
+
+    :param name:
+    :param dir_file:
+    :param kwargs:
+    :return:
+    """
+    received_kws = kwargs.keys()
+    expected_kws = ['name', 'dir_file']
+    for kw_i in received_kws:
+        if kw_i not in expected_kws:
+            raise KeyError(kw_i)
+
+    if kwargs.get('name') is None:
+        if kwargs.get('dir_file') is None:
+            raise ValueError('One of name or dir_file must not be None')
+        else:
+            dir_file = kwargs['dir_file']
+            root_yolo, name = os.path.split(p=dir_file)
+    else:
+        name = kwargs['name']
+        if kwargs.get('dir_file') is None:
+            dir_file = name
+        else:
+            dir_file = kwargs['dir_file']
+
+    if os.path.exists(dir_file):
+        yolo = YOLO(dir_file)
+    else:
+        yolo = download(name=name, dir_file=dir_file)
+
+    return yolo

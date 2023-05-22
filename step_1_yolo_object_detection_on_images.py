@@ -1,6 +1,5 @@
 
 import os
-from ultralytics import YOLO
 import utilities
 import calapy as cp
 
@@ -26,12 +25,9 @@ v = 4
 name_yolo_version_v = name_yolo_versions[v]
 dir_yolo_version_v = os.path.join(root_yolos, name_yolo_version_v)
 
-if os.path.exists(dir_yolo_version_v):
-    yolo_v = YOLO(dir_yolo_version_v)
-else:
-    yolo_v = utilities.download(name_model=name_yolo_version_v, dir_file=dir_yolo_version_v)
+yolo_v = utilities.load_yolo(name=name_yolo_version_v, dir_file=dir_yolo_version_v)
 
-results_v = yolo_v(source=dir_input_images)
+results_v = yolo_v(source=dir_input_images, verbose=False)
 
 boxes = [results_v[i].boxes for i in range(0, I, 1)]
 
@@ -46,4 +42,4 @@ kwargs = [
     for i in range(0, I, 1)]
 
 multi_threads = cp.threading.MultiThreads(func=box_drawer, args=None, kwargs=kwargs, n_workers=None, names=None)
-out_images2 = multi_threads.run()
+out_images = multi_threads.run()
