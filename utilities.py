@@ -88,28 +88,28 @@ class BoxDrawer:
 
         n_boxes = xyxy.shape[0]
 
-        xyxy_int = cp.maths.rint(xyxy)
+        xyxy_int = cp.maths.round_to_closest_int(xyxy)
         if isinstance(xyxy_int, (np.ndarray, torch.Tensor)):
             xyxy_int = xyxy_int.tolist()
 
         if kwargs.get('classes') is None:
             classes_int = None  # type: None | list | tuple | np.ndarray | torch.Tensor
         else:
-            classes_int = cp.maths.rint(kwargs['classes'])
+            classes_int = cp.maths.round_to_closest_int(kwargs['classes'])
             if isinstance(classes_int, (np.ndarray, torch.Tensor)):
                 classes_int = classes_int.tolist()
 
         if kwargs.get('confidences') is None:
             confidences_int = None  # type: None | list | tuple | np.ndarray | torch.Tensor
         else:
-            confidences_int = cp.maths.rint(kwargs['confidences'] * 100)
+            confidences_int = cp.maths.round_to_closest_int(kwargs['confidences'] * 100)
             if isinstance(confidences_int, (np.ndarray, torch.Tensor)):
                 confidences_int = confidences_int.tolist()
 
         if kwargs.get('ids') is None:
             ids_int = None  # type: None | list | tuple | np.ndarray | torch.Tensor
         else:
-            ids_int = cp.maths.rint(kwargs['ids'])
+            ids_int = cp.maths.round_to_closest_int(kwargs['ids'])
             if isinstance(ids_int, (np.ndarray, torch.Tensor)):
                 ids_int = ids_int.tolist()
 
