@@ -1,7 +1,6 @@
 
 import os
 import utilities
-import calapy as cp
 
 
 root_script = __file__
@@ -29,17 +28,17 @@ yolo_v = utilities.load_yolo(name=name_yolo_version_v, dir_file=dir_yolo_version
 
 results_v = yolo_v(source=dir_input_images, verbose=False)
 
-boxes = [results_v[i].boxes for i in range(0, I, 1)]
+xyxy = [results_v[i].boxes.xyxy for i in range(0, I, 1)]
+classes = [results_v[i].boxes.cls for i in range(0, I, 1)]
+confidences = [results_v[i].boxes.conf for i in range(0, I, 1)]
 
-box_drawer = utilities.BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(255 * .5))
+
+box_drawer = utilities.BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(255 * .3))
 
 root_out_images = os.path.join(root_images, 'output_images', name_yolo_version_v.removesuffix('.pt'))
 os.makedirs(name=root_out_images, exist_ok=True)
 dir_out_images = [os.path.join(root_out_images, name_i) for name_i in name_input_images]
 
-kwargs = [
-    {'boxes': boxes[i], 'input_image': dir_input_images[i], 'dir_out_image': dir_out_images[i]}
-    for i in range(0, I, 1)]
-
-multi_threads = cp.threading.MultiThreads(func=box_drawer, args=None, kwargs=kwargs, n_workers=None, names=None)
-out_images = multi_threads.run()
+out_images = box_drawer(
+    input_images=dir_input_images, xyxy=xyxy, dir_out_images=dir_out_images, n_workers=None,
+    classes=classes, confidences=confidences)
