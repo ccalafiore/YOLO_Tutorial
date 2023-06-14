@@ -24,7 +24,10 @@ v = 4
 name_yolo_version_v = name_yolo_versions[v]
 dir_yolo_version_v = os.path.join(root_yolos, name_yolo_version_v)
 
-yolo_v = utilities.load_yolo(name=name_yolo_version_v, dir_file=dir_yolo_version_v)
+if os.path.exists(dir_yolo_version_v):
+    yolo_v = utilities.load_yolo(dir_file=dir_yolo_version_v)
+else:
+    yolo_v = utilities.download_yolo(name=name_yolo_version_v, dir_file=dir_yolo_version_v)
 
 results_v = yolo_v(source=dir_input_images, verbose=False)
 

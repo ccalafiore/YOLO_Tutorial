@@ -1,6 +1,5 @@
 
 import os
-import typing
 import cv2
 from distinctipy import distinctipy
 import numpy as np
@@ -9,7 +8,48 @@ import calapy as cp
 import torch
 
 
-def download(name, dir_file=None):
+def load_yolo(dir_file):
+
+    """
+    :param dir_file:
+    :type dir_file: str
+    :return:
+    :rtype: YOLO
+    """
+
+    if os.path.exists(dir_file):
+        yolo = YOLO(dir_file)
+    else:
+        raise FileNotFoundError()
+
+    return yolo
+
+
+def load_yolos(dirs_files):
+
+    """
+    :param dirs_files:
+    :type dirs_files: list | tuple | np.ndarray
+    :return:
+    :rtype: list | tuple | np.ndarray
+    """
+
+    # yolos = None
+    # return yolos
+    raise NotImplementedError()
+
+
+def download_yolo(name, dir_file=None):
+
+    """
+
+    :param name:
+    :type name: str
+    :param dir_file:
+    :type dir_file: None| str
+    :return:
+    :rtype: YOLO
+    """
 
     tmp_dir_root = os.getcwd()
     tmp_dir_model = os.path.join(tmp_dir_root, name)
@@ -25,6 +65,23 @@ def download(name, dir_file=None):
         os.rename(tmp_dir_model, dir_file)
 
     return yolo
+
+
+def download_yolos(names, dirs_files=None):
+
+    """
+
+    :param names:
+    :type names: list | tuple | np.ndarray
+    :param dirs_files:
+    :type dirs_files: None| list | tuple | np.ndarray
+    :return:
+    :rtype: list | tuple | np.ndarray
+    """
+
+    # yolos = None
+    # return yolos
+    raise NotImplementedError()
 
 
 class BoxDrawer:
@@ -220,39 +277,3 @@ class BoxDrawer:
             return np.asarray(out_images)
 
     __call__ = draw_multi_boxes_in_multi_images
-
-
-def load_yolo(**kwargs):
-
-    """
-
-    :param name:
-    :param dir_file:
-    :param kwargs:
-    :return:
-    """
-    received_kws = kwargs.keys()
-    expected_kws = ['name', 'dir_file']
-    for kw_i in received_kws:
-        if kw_i not in expected_kws:
-            raise KeyError(kw_i)
-
-    if kwargs.get('name') is None:
-        if kwargs.get('dir_file') is None:
-            raise ValueError('One of name or dir_file must not be None')
-        else:
-            dir_file = kwargs['dir_file']
-            root_yolo, name = os.path.split(p=dir_file)
-    else:
-        name = kwargs['name']
-        if kwargs.get('dir_file') is None:
-            dir_file = name
-        else:
-            dir_file = kwargs['dir_file']
-
-    if os.path.exists(dir_file):
-        yolo = YOLO(dir_file)
-    else:
-        yolo = download(name=name, dir_file=dir_file)
-
-    return yolo

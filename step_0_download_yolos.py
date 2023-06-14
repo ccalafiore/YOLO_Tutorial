@@ -19,4 +19,5 @@ n_yolos = len(name_yolo_versions)
 
 kwargs = [dict(name=name_yolo_versions[i], dir_file=dir_yolo_versions[i]) for i in range(0, n_yolos, 1)]
 
-yolos = cp.threading.MultiThreads(func=utilities.download, args=None, kwargs=kwargs, n_workers=None, names=None).run()
+yolos = cp.threading.MultiThreads(
+    func=utilities.download_yolo, args=None, kwargs=kwargs, n_workers=None, names=None).run()

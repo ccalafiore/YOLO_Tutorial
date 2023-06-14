@@ -17,9 +17,12 @@ v = 1
 name_yolo_version_v = name_yolo_versions[v]
 dir_yolo_version_v = os.path.join(root_yolos, name_yolo_version_v)
 
-yolo_v = utilities.load_yolo(name=name_yolo_version_v, dir_file=dir_yolo_version_v)
+if os.path.exists(dir_yolo_version_v):
+    yolo_v = utilities.load_yolo(dir_file=dir_yolo_version_v)
+else:
+    yolo_v = utilities.download_yolo(name=name_yolo_version_v, dir_file=dir_yolo_version_v)
 
-box_drawer = utilities.BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(255 * .5))
+box_drawer = utilities.BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(255 * .3))
 
 camera_index = 1
 
