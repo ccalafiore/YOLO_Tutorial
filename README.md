@@ -8,3 +8,8 @@ The requirements.txt shows the required python packages to run all scripts in th
 
 For more details watch the video at https://youtu.be/WgPbbWmnXJ8
 
+
+
+### To do
+- step 0
+- step 2

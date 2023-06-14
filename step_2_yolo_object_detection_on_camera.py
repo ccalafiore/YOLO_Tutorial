@@ -26,10 +26,7 @@ camera_index = 1
 quit_key_str = 'q'
 quit_key_int = ord(quit_key_str)
 
-timeout = 20
-
-
-
+timeout = 20  # in seconds
 
 cap = cv2.VideoCapture(index=camera_index)
 if not cap.isOpened():
