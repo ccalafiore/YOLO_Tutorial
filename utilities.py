@@ -1,5 +1,6 @@
 
 import os
+import pathlib
 import cv2
 from distinctipy import distinctipy
 import numpy as np
@@ -8,80 +9,100 @@ import calapy as cp
 import torch
 
 
-def load_yolo(dir_file):
+def load_yolo(dir_model):
 
     """
-    :param dir_file:
-    :type dir_file: str
+    :param dir_model:
+    :type dir_model: str
     :return:
     :rtype: YOLO
     """
 
-    if os.path.exists(dir_file):
-        yolo = YOLO(dir_file)
-    else:
-        raise FileNotFoundError()
+    if not os.path.exists(dir_model):
+        dir_root, name_yolo = os.path.split(dir_model)
+        os.makedirs(dir_root, exist_ok=True)
+
+    yolo = YOLO(dir_model)
 
     return yolo
 
 
-def load_yolos(dirs_files):
+def load_yolos(dirs_models, n_workers=None):
 
     """
-    :param dirs_files:
-    :type dirs_files: list | tuple | np.ndarray
+
+    :param dirs_models:
+    :type dirs_models: list | tuple | np.ndarray
+    :param n_workers:
+    :type n_workers: None | int
     :return:
     :rtype: list | tuple | np.ndarray
     """
 
-    # yolos = None
-    # return yolos
-    raise NotImplementedError()
+    n_yolos = len(dirs_models)
+    kwargs = [dict(dir_model=dirs_models[i]) for i in range(0, n_yolos, 1)]
+
+    yolos = cp.threading.MultiThreads(
+        func=load_yolo, args=None, kwargs=kwargs, n_workers=n_workers, names=None).run()
+
+    return yolos
 
 
-def download_yolo(name, dir_file=None):
+def download_yolo(name, dir_root=None):
 
     """
 
     :param name:
     :type name: str
-    :param dir_file:
-    :type dir_file: None| str
+    :param dir_root:
+    :type dir_root: None| str
     :return:
     :rtype: YOLO
     """
 
-    tmp_dir_root = os.getcwd()
-    tmp_dir_model = os.path.join(tmp_dir_root, name)
+    if dir_root is None:
+        dir_root = os.getcwd()
+    else:
+        os.makedirs(dir_root, exist_ok=True)
 
-    if os.path.exists(tmp_dir_model):
-        os.remove(tmp_dir_model)
+    dir_model = os.path.join(dir_root, name)
 
-    yolo = YOLO(name)
+    suffix = pathlib.Path(dir_model).suffix
+    if len(suffix) == 0:
+        dir_model += '.pt'
 
-    if dir_file is not None:
-        if os.path.exists(dir_file):
-            os.remove(dir_file)
-        os.rename(tmp_dir_model, dir_file)
+    if os.path.exists(dir_model):
+        os.remove(dir_model)
+
+    yolo = YOLO(dir_model)
 
     return yolo
 
 
-def download_yolos(names, dirs_files=None):
+def download_yolos(names, dirs_roots=None, n_workers=None):
 
     """
 
     :param names:
     :type names: list | tuple | np.ndarray
-    :param dirs_files:
-    :type dirs_files: None| list | tuple | np.ndarray
+    :param dirs_roots:
+    :type dirs_roots: None| list | tuple | np.ndarray
+    :param n_workers:
+    :type n_workers: None | int
     :return:
     :rtype: list | tuple | np.ndarray
     """
 
-    # yolos = None
-    # return yolos
-    raise NotImplementedError()
+    n_yolos = len(names)
+    if dirs_roots is None:
+        kwargs = [dict(name=names[i]) for i in range(0, n_yolos, 1)]
+    else:
+        kwargs = [dict(name=names[i], dir_root=dirs_roots[i]) for i in range(0, n_yolos, 1)]
+
+    yolos = cp.threading.MultiThreads(
+        func=download_yolo, args=None, kwargs=kwargs, n_workers=n_workers, names=None).run()
+
+    return yolos
 
 
 class BoxDrawer:
@@ -230,6 +251,8 @@ class BoxDrawer:
                 cv2.putText(image, label_b, (x1 + 2, y1 - 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, text_colors_b, 1)
 
         if kwargs.get('dir_out_image') is not None:
+            dir_root_out_image, name_out_image = os.path.split(kwargs['dir_out_image'])
+            os.makedirs(name=dir_root_out_image, exist_ok=True)
             cv2.imwrite(filename=kwargs['dir_out_image'], img=image)
 
         return image
