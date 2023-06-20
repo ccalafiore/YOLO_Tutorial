@@ -28,5 +28,5 @@ quitting_key = 'q'
 timeout = 10  # in secs
 
 utilities.detect_video(
-    model=yolo_v, source=camera_index, box_drawer=box_drawer, dir_out_video=None, format_out_video=None,
+    model=yolo_v, source=camera_index, box_drawer=box_drawer, dir_out_video=None,
     show=True, size=size, fps=fps, do_track=False, do_count=False, timeout=timeout, quit_key=quitting_key)

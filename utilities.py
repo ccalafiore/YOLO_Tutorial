@@ -307,7 +307,7 @@ class BoxDrawer:
 
 
 def detect_video(
-        model, source, box_drawer=None, dir_out_video=None, format_out_video=None, show=False,
+        model, source, box_drawer=None, dir_out_video=None, show=False,
         size=None, fps=None, do_track=False, do_count=False, timeout=None, quit_key=None):
 
     if isinstance(model, str):
@@ -316,43 +316,26 @@ def detect_video(
     if box_drawer is None:
         box_drawer = BoxDrawer(names=model.model.names, colors=None, threshold=(255 * .3))
 
-    if isinstance(format_out_video, str) and format_out_video[0] == '.':
-        format_out_video = format_out_video[slice(1, None, 1)]
+    if dir_out_video is None:
+        format_out_video = None
+        write_out_video = False
+    else:
+        path_out_video = pathlib.Path(dir_out_video)
+        if len(path_out_video.suffix) == 0:
+            if isinstance(source, int):
+                format_out_video = 'mp4'
+            else:
+                path_source = pathlib.Path(source)
+                format_out_video = path_source.suffix.removeprefix('.')
+            dir_out_video = '.'.join([dir_out_video, format_out_video])
+        else:
+            format_out_video = path_out_video.suffix.removeprefix('.')
+        write_out_video = True
 
     if isinstance(source, int):
         cap = cv2.VideoCapture(index=source)
-        if dir_out_video is None:
-            if format_out_video is None:
-                dir_out_video = 'output_video.mp4'
-                format_out_video = 'mp4'
-            else:
-                dir_out_video = '.'.join(['output_video', format_out_video])
-        else:
-            path_out_video = pathlib.Path(dir_out_video)
-            if format_out_video is None:
-                if len(path_out_video.suffix) == 0:
-                    format_out_video = 'mp4'
-                    dir_out_video = '.'.join([dir_out_video, format_out_video])
-                else:
-                    format_out_video = path_out_video.suffix[slice(1, None, 1)]
-
     elif isinstance(source, str):
         cap = cv2.VideoCapture(filename=source)
-        path_source = pathlib.Path(source)
-        if dir_out_video is None:
-            if format_out_video is None:
-                dir_out_video = os.path.join(os.getcwd(), 'output_' + path_source.name)
-                format_out_video = path_source.suffix[slice(1, None, 1)]
-            else:
-                dir_out_video = os.path.join(os.getcwd(), 'output_' + '.'.join([path_source.stem, format_out_video]))
-        else:
-            path_out_video = pathlib.Path(dir_out_video)
-            if format_out_video is None:
-                if len(path_out_video.suffix) == 0:
-                    format_out_video = path_source.suffix[slice(1, None, 1)]
-                    dir_out_video = '.'.join([dir_out_video, format_out_video])
-                else:
-                    format_out_video = path_out_video.suffix[slice(1, None, 1)]
     else:
         raise TypeError('source')
 
@@ -361,33 +344,40 @@ def detect_video(
         exit()
 
     if size is None:
-        size = w, h = cap.get(3), cap.get(4)
+        pass
     else:
         if isinstance(size, int):
             size = tuple([size, size])
+
+        if isinstance(size, float):
+            tmp = math.floor(size)
+            size = tuple([tmp, tmp])
+
         elif isinstance(size, list):
-            size = tuple(size)
+            size = tuple(cp.maths.round_down_to_closest_int(num=size))
+
         elif isinstance(size, tuple):
-            pass
+            size = cp.maths.round_down_to_closest_int(num=size)
+
         elif isinstance(size, (np.ndarray, torch.Tensor)):
-            size = tuple(size.tolist())
+            size = tuple(cp.maths.round_down_to_closest_int(num=size).tolist())
         else:
             raise TypeError('size')
 
         w, h = size
-        cap.set(3, w)
-        cap.set(4, h)
+        if w != cap.get(3):
+            cap.set(3, w)
+        if h != cap.get(4):
+            cap.set(4, h)
+
+    size = w, h = cp.maths.round_down_to_closest_int(num=(cap.get(3), cap.get(4)))
 
     if fps is None:
         fps = cap.get(cv2.CAP_PROP_FPS)
-    # if fps is None:
-    #     fps = math.floor(cap.get(cv2.CAP_PROP_FPS))
-    # elif isinstance(fps, int):
-    #     pass
-    # elif isinstance(fps, float):
-    #     fps = math.floor(fps)
-    # else:
-    #     raise TypeError('fps')
+    elif isinstance(fps, (int, float)):
+        pass
+    else:
+        raise TypeError('fps')
 
     mspf = math.floor(1000 / fps)
     spf = mspf / 1000
@@ -402,12 +392,15 @@ def detect_video(
     else:
         raise TypeError('quit_key')
 
-    if format_out_video == 'mp4':
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    else:
-        raise ValueError('format_out_video')
+    if write_out_video:
+        if format_out_video == 'mp4':
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        else:
+            raise ValueError('format_out_video')
 
-    video_writer = cv2.VideoWriter(dir_out_video, fourcc, fps, (w, h), 1)
+        video_writer = cv2.VideoWriter(dir_out_video, fourcc, fps, (w, h), 1)
+    else:
+        video_writer = None
 
     if isinstance(source, int):
         # start the model by processing one image
@@ -434,14 +427,14 @@ def detect_video(
             image = box_drawer.draw_multi_boxes_in_single_image(
                 input_image=image, xyxy=xyxy, classes=classes, confidences=confidences, dir_out_image=None)
 
-            video_writer.write(image)
+            if write_out_video:
+                video_writer.write(image)
 
             if show:
                 cv2.imshow(winname='Image', mat=image)
                 cv2.pollKey()
                 if keyboard.is_pressed(quit_key) or (timer.get_seconds() >= timeout):
                     playing = False
-                    cv2.destroyAllWindows()
                 else:
                     # todo replace cv2.pollKey() with time.sleep() or cp.clock.wait()
                     # cv2.waitKey(delay=mspf)
@@ -453,6 +446,7 @@ def detect_video(
             print("Can't receive frame (stream end?). Exiting ...")
             playing = False
 
+    cv2.destroyAllWindows()
     cap.release()
     video_writer.release()
 
