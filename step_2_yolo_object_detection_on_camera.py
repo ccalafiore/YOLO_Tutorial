@@ -29,8 +29,6 @@ fps = 5.0
 quitting_key = 'q'
 timeout = 20  # in secs
 
-
-
 utilities.detect_video(
     model=yolo_v, source=camera_index, dir_out_video=dir_out_video, show=True, size=size, fps=fps,
     box_drawer=box_drawer, do_track=False, do_count=False, timeout=timeout, quit_key=quitting_key)
