@@ -12,7 +12,6 @@ from ultralytics import YOLO
 import calapy as cp
 
 
-
 def load_yolo(dir_model):
 
     """
@@ -307,14 +306,11 @@ class BoxDrawer:
 
 
 def detect_video(
-        model, source, box_drawer=None, dir_out_video=None, show=False,
-        size=None, fps=None, do_track=False, do_count=False, timeout=None, quit_key=None):
+        model, source, dir_out_video=None, show=False, size=None, fps=None,
+        box_drawer=None, do_track=False, do_count=False, timeout=None, quit_key=None):
 
     if isinstance(model, str):
         model = load_yolo(dir_model=model)
-
-    if box_drawer is None:
-        box_drawer = BoxDrawer(names=model.model.names, colors=None, threshold=(255 * .3))
 
     if dir_out_video is None:
         format_out_video = None
@@ -379,8 +375,11 @@ def detect_video(
     else:
         raise TypeError('fps')
 
-    mspf = math.floor(1000 / fps)
-    spf = mspf / 1000
+    spf = 1 / fps
+    mspf = math.floor(spf * 1000)
+
+    if box_drawer is None:
+        box_drawer = BoxDrawer(names=model.model.names, colors=None, threshold=(255 * .3))
 
     if timeout is None:
         timeout = math.inf
@@ -402,15 +401,15 @@ def detect_video(
     else:
         video_writer = None
 
+    timer = None
+
+    playing = True
+
     if isinstance(source, int):
         # start the model by processing one image
         success, image = cap.read()
         if success:
             results = model(source=image, stream=False, verbose=False)
-
-    playing = True
-
-    timer = cp.clock.Timer()
 
     while playing:
 
@@ -431,23 +430,25 @@ def detect_video(
                 video_writer.write(image)
 
             if show:
+
+                if timer is None:
+                    timer = cp.clock.Timer()
+                else:
+                    sec_tick = timer.wait(seconds=spf)
+                    print(sec_tick)
+
                 cv2.imshow(winname='Image', mat=image)
                 cv2.pollKey()
-                if keyboard.is_pressed(quit_key) or (timer.get_seconds() >= timeout):
-                    playing = False
-                else:
-                    # todo replace cv2.pollKey() with time.sleep() or cp.clock.wait()
-                    # cv2.waitKey(delay=mspf)
-                    time.sleep(spf)
-            else:
-                if keyboard.is_pressed(quit_key) or (timer.get_seconds() >= timeout):
-                    playing = False
+
+            if keyboard.is_pressed(quit_key) or (timer.get_seconds_total() >= timeout):
+                playing = False
         else:
             print("Can't receive frame (stream end?). Exiting ...")
             playing = False
 
     cv2.destroyAllWindows()
     cap.release()
-    video_writer.release()
+    if write_out_video:
+        video_writer.release()
 
     return None
