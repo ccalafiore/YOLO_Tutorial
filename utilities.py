@@ -1,7 +1,6 @@
 
 import os
 import math
-import time
 import keyboard
 import pathlib
 import cv2
@@ -402,8 +401,9 @@ def detect_video(
         video_writer = None
 
     timer = None
+    t = 0
 
-    playing = True
+    capturing = True
 
     if isinstance(source, int):
         # start the model by processing one image
@@ -411,40 +411,201 @@ def detect_video(
         if success:
             results = model(source=image, stream=False, verbose=False)
 
-    while playing:
+    while capturing:
 
-        success, image = cap.read()
+        if keyboard.is_pressed(quit_key):
+            print('The Quitting Key was pressed. Quitting ...')
+            capturing = False
 
-        if success:
+        elif (t * spf) > timeout:
+            print('Timeout')
+            capturing = False
 
-            results = model(source=image, stream=False, verbose=False)
-
-            xyxy = results[0].boxes.xyxy
-            classes = results[0].boxes.cls
-            confidences = results[0].boxes.conf
-
-            image = box_drawer.draw_multi_boxes_in_single_image(
-                input_image=image, xyxy=xyxy, classes=classes, confidences=confidences, dir_out_image=None)
-
-            if write_out_video:
-                video_writer.write(image)
-
-            if show:
-
-                if timer is None:
-                    timer = cp.clock.Timer()
-                else:
-                    sec_tick = timer.wait(seconds=spf)
-                    print(sec_tick)
-
-                cv2.imshow(winname='Image', mat=image)
-                cv2.pollKey()
-
-            if keyboard.is_pressed(quit_key) or (timer.get_seconds_total() >= timeout):
-                playing = False
+        # elif timer.get_seconds_total() >= timeout:
+        #     print('Timeout')
+        #     capturing = False
         else:
-            print("Can't receive frame (stream end?). Exiting ...")
-            playing = False
+
+            success, image = cap.read()
+            if success:
+
+                results = model(source=image, stream=False, verbose=False)
+
+                xyxy = results[0].boxes.xyxy
+                classes = results[0].boxes.cls
+                confidences = results[0].boxes.conf
+
+                image = box_drawer.draw_multi_boxes_in_single_image(
+                    input_image=image, xyxy=xyxy, classes=classes, confidences=confidences, dir_out_image=None)
+
+                if write_out_video:
+                    video_writer.write(image)
+
+                if isinstance(source, int) or show:
+                    if timer is None:
+                        timer = cp.clock.Timer(ticks_per_sec=fps)
+                    else:
+                        timer.wait()
+
+                if show:
+                    cv2.imshow(winname='Image', mat=image)
+                    cv2.pollKey()
+
+            else:
+                print('Can\'t receive frame (stream end?). Exiting ...')
+                capturing = False
+
+            t += 1
+
+    cv2.destroyAllWindows()
+    cap.release()
+    if write_out_video:
+        video_writer.release()
+
+    return None
+
+
+def capture_video(source, dir_out_video=None, show=False, size=None, fps=None, timeout=None, quit_key=None):
+    """
+
+    :param source:
+    :param dir_out_video:
+    :param show:
+    :param size:
+    :param fps:
+    :param timeout:
+    :param quit_key:
+    :return:
+    :todo image_transformation:
+    """
+
+    if dir_out_video is None:
+        format_out_video = None
+        write_out_video = False
+    else:
+        path_out_video = pathlib.Path(dir_out_video)
+        if len(path_out_video.suffix) == 0:
+            if isinstance(source, int):
+                format_out_video = 'mp4'
+            else:
+                path_source = pathlib.Path(source)
+                format_out_video = path_source.suffix.removeprefix('.')
+            dir_out_video = '.'.join([dir_out_video, format_out_video])
+        else:
+            format_out_video = path_out_video.suffix.removeprefix('.')
+        write_out_video = True
+
+    if isinstance(source, int):
+        cap = cv2.VideoCapture(index=source)
+    elif isinstance(source, str):
+        cap = cv2.VideoCapture(filename=source)
+    else:
+        raise TypeError('source')
+
+    if not cap.isOpened():
+        print("Cannot open camera")
+        exit()
+
+    if size is None:
+        pass
+    else:
+        if isinstance(size, int):
+            size = tuple([size, size])
+
+        if isinstance(size, float):
+            tmp = math.floor(size)
+            size = tuple([tmp, tmp])
+
+        elif isinstance(size, list):
+            size = tuple(cp.maths.round_down_to_closest_int(num=size))
+
+        elif isinstance(size, tuple):
+            size = cp.maths.round_down_to_closest_int(num=size)
+
+        elif isinstance(size, (np.ndarray, torch.Tensor)):
+            size = tuple(cp.maths.round_down_to_closest_int(num=size).tolist())
+        else:
+            raise TypeError('size')
+
+        w, h = size
+        if w != cap.get(3):
+            cap.set(3, w)
+        if h != cap.get(4):
+            cap.set(4, h)
+
+    size = w, h = cp.maths.round_down_to_closest_int(num=(cap.get(3), cap.get(4)))
+
+    if fps is None:
+        fps = cap.get(cv2.CAP_PROP_FPS)
+    elif isinstance(fps, (int, float)):
+        pass
+    else:
+        raise TypeError('fps')
+
+    spf = 1 / fps
+    mspf = math.floor(spf * 1000)
+
+    if timeout is None:
+        timeout = math.inf
+
+    if quit_key is None:
+        pass
+    elif isinstance(quit_key, (str, int)):
+        pass
+    else:
+        raise TypeError('quit_key')
+
+    if write_out_video:
+        if format_out_video == 'mp4':
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        else:
+            raise ValueError('format_out_video')
+
+        video_writer = cv2.VideoWriter(dir_out_video, fourcc, fps, (w, h), 1)
+    else:
+        video_writer = None
+
+    timer = None
+    t = 0
+
+    capturing = True
+
+    while capturing:
+
+        if keyboard.is_pressed(quit_key):
+            print('The Quitting Key was pressed. Quitting ...')
+            capturing = False
+
+        elif (t * spf) > timeout:
+            print('Timeout')
+            capturing = False
+
+        # elif timer.get_seconds_total() >= timeout:
+        #     print('Timeout')
+        #     capturing = False
+        else:
+
+            success, image = cap.read()
+            if success:
+
+                if write_out_video:
+                    video_writer.write(image)
+
+                if isinstance(source, int) or show:
+                    if timer is None:
+                        timer = cp.clock.Timer(ticks_per_sec=fps)
+                    else:
+                        timer.wait()
+
+                if show:
+                    cv2.imshow(winname='Image', mat=image)
+                    cv2.pollKey()
+
+            else:
+                print('Can\'t receive frame (stream end?). Exiting ...')
+                capturing = False
+
+            t += 1
 
     cv2.destroyAllWindows()
     cap.release()

@@ -24,10 +24,10 @@ dir_out_video = 'output_video.mp4'
 box_drawer = utilities.BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(255 * .3))
 
 size = 1280, 720
-fps = 5.0
+fps = 30
 
 quitting_key = 'q'
-timeout = 20  # in secs
+timeout = 10  # in secs
 
 utilities.detect_video(
     model=yolo_v, source=camera_index, dir_out_video=dir_out_video, show=True, size=size, fps=fps,
