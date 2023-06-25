@@ -19,12 +19,14 @@ yolo_v = utilities.load_yolo(dir_model=dir_yolo_version_v)
 
 camera_index = 0
 
-dir_out_video = 'output_video.mp4'
+root_videos = os.path.join(root_data, 'videos')
+root_out_videos = os.path.join(root_videos, 'output_videos', name_yolo_version_v)
+dir_out_video = os.path.join(root_out_videos, 'output_video_camera.mp4')
 
 box_drawer = utilities.BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(255 * .3))
 
 size = 1280, 720
-fps = 30
+fps = 4
 
 quitting_key = 'q'
 timeout = 10  # in secs

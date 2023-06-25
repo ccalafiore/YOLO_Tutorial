@@ -20,8 +20,11 @@ def load_yolo(dir_model):
     :rtype: YOLO
     """
 
-    if not os.path.exists(dir_model):
-        dir_root, name_yolo = os.path.split(dir_model)
+    dir_root, name_yolo = os.path.split(dir_model)
+    if len(dir_root) == 0:
+        dir_root = os.getcwd()
+        dir_model = os.path.join(dir_root, name_yolo)
+    else:
         os.makedirs(dir_root, exist_ok=True)
 
     yolo = YOLO(dir_model)
@@ -254,7 +257,11 @@ class BoxDrawer:
 
         if kwargs.get('dir_out_image') is not None:
             dir_root_out_image, name_out_image = os.path.split(kwargs['dir_out_image'])
-            os.makedirs(name=dir_root_out_image, exist_ok=True)
+            if len(dir_root_out_image) == 0:
+                dir_root_out_image = os.getcwd()
+                kwargs['dir_out_image'] = os.path.join(dir_root_out_image, name_out_image)
+            else:
+                os.makedirs(name=dir_root_out_image, exist_ok=True)
             cv2.imwrite(filename=kwargs['dir_out_image'], img=image)
 
         return image
@@ -325,6 +332,14 @@ def detect_video(
             dir_out_video = '.'.join([dir_out_video, format_out_video])
         else:
             format_out_video = path_out_video.suffix.removeprefix('.')
+
+        dir_root_out_video, name_out_video = os.path.split(dir_out_video)
+        if len(dir_root_out_video) == 0:
+            dir_root_out_video = os.getcwd()
+            dir_out_video = os.path.join(dir_root_out_video, name_out_video)
+        else:
+            os.makedirs(name=dir_root_out_video, exist_ok=True)
+
         write_out_video = True
 
     if isinstance(source, int):
@@ -451,11 +466,11 @@ def detect_video(
                     cv2.imshow(winname='Image', mat=image)
                     cv2.pollKey()
 
+                t += 1
+
             else:
                 print('Can\'t receive frame (stream end?). Exiting ...')
                 capturing = False
-
-            t += 1
 
     cv2.destroyAllWindows()
     cap.release()
@@ -493,6 +508,14 @@ def capture_video(source, dir_out_video=None, show=False, size=None, fps=None, t
             dir_out_video = '.'.join([dir_out_video, format_out_video])
         else:
             format_out_video = path_out_video.suffix.removeprefix('.')
+
+        dir_root_out_video, name_out_video = os.path.split(dir_out_video)
+        if len(dir_root_out_video) == 0:
+            dir_root_out_video = os.getcwd()
+            dir_out_video = os.path.join(dir_root_out_video, name_out_video)
+        else:
+            os.makedirs(name=dir_root_out_video, exist_ok=True)
+
         write_out_video = True
 
     if isinstance(source, int):
@@ -601,11 +624,11 @@ def capture_video(source, dir_out_video=None, show=False, size=None, fps=None, t
                     cv2.imshow(winname='Image', mat=image)
                     cv2.pollKey()
 
+                t += 1
+
             else:
                 print('Can\'t receive frame (stream end?). Exiting ...')
                 capturing = False
-
-            t += 1
 
     cv2.destroyAllWindows()
     cap.release()
