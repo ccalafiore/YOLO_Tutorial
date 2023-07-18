@@ -1,5 +1,4 @@
 
-# todo
 
 import os
 import utilities
@@ -11,7 +10,7 @@ root_data = os.path.join(root_project, 'data')
 
 root_yolos = os.path.join(root_data, 'yolos')
 name_yolo_versions = ['yolov8n', 'yolov8s', 'yolov8m', 'yolov8l', 'yolov8x']
-v = 0
+v = 4
 name_yolo_version_v = name_yolo_versions[v]
 dir_yolo_version_v = os.path.join(root_yolos, name_yolo_version_v + '.pt')
 
@@ -21,15 +20,17 @@ camera_index = 0
 
 root_videos = os.path.join(root_data, 'videos')
 root_out_videos = os.path.join(root_videos, 'output_videos', name_yolo_version_v)
-dir_out_video = os.path.join(root_out_videos, 'output_video_camera.mp4')
+# dir_out_video = os.path.join(root_out_videos, 'output_video_camera.mp4')
+dir_out_video = None
 
 box_drawer = utilities.BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(255 * .3))
 
 size = 1280, 720
-fps = 4
+fps = 10
 
 quitting_key = 'q'
-timeout = 10  # in secs
+# timeout = 10  # in secs
+timeout = None  # in secs
 
 utilities.detect_video(
     model=yolo_v, source=camera_index, dir_out_video=dir_out_video, show=True, size=size, fps=fps,
