@@ -417,9 +417,10 @@ def detect_video(
 
     while capturing:
 
-        if keyboard.is_pressed(quit_key):
-            print('The Quitting Key was pressed. Quitting ...')
-            capturing = False
+        if os.geteuid() == 0:
+            if keyboard.is_pressed(quit_key):
+                print('The Quitting Key was pressed. Quitting ...')
+                capturing = False
 
         elif (t * spf) > timeout:
             print('Timeout')
@@ -584,9 +585,10 @@ def capture_video(source, dir_out_video=None, show=False, size=None, fps=None, t
 
     while capturing:
 
-        if keyboard.is_pressed(quit_key):
-            print('The Quitting Key was pressed. Quitting ...')
-            capturing = False
+        if os.geteuid() == 0:
+            if keyboard.is_pressed(quit_key):
+                print('The Quitting Key was pressed. Quitting ...')
+                capturing = False
 
         elif (t * spf) > timeout:
             print('Timeout')
