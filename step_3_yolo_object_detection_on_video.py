@@ -30,6 +30,7 @@ size = None
 fps = None
 
 quitting_key = 'q'
+# timeout = 10  # in secs
 timeout = None  # in secs
 
 utilities.detect_video(

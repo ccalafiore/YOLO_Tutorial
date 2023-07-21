@@ -2,8 +2,8 @@
 # Object Detection Tutorial
 
 
-ultralytics~=8.0.122
-numpy~=1.25.0
+ultralytics~=8.0.139
+numpy~=1.25.1
 calapy>=0.1.17.0
 opencv-python~=4.8.0.74
 distinctipy~=1.2.2

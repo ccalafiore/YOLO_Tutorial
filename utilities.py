@@ -1,7 +1,7 @@
 
 import os
+import platform
 import math
-import keyboard
 import pathlib
 import cv2
 from distinctipy import distinctipy
@@ -9,6 +9,71 @@ import numpy as np
 import torch
 from ultralytics import YOLO
 import calapy as cp
+
+
+if (platform.system() == 'Linux') and (os.geteuid() != 0):
+    from pynput import keyboard
+    library_name = 'pynput'
+else:
+    import keyboard
+    library_name = 'keyboard'
+
+
+class KeyboardListener:
+
+    def __init__(self):
+
+        self.library_name = library_name
+
+    def is_pressed(self, key):
+
+        if key is None:
+            return False
+
+        elif isinstance(key, (int, str)):
+
+            if isinstance(key, int):
+                key_is_int = True
+            else:
+                key_is_int = False
+
+            if self.library_name == 'pynput':
+
+                # The event listener will be running in this block
+                with keyboard.Events() as events:
+                    # Block at most one second
+                    event = events.get(0.0)
+                    if event is None:
+                        return False
+                    elif key_is_int:
+                        return event.key.vk == key
+                    else:
+                        return event.key.char.lower() == key.lower()
+
+            elif self.library_name == 'keyboard':
+
+                key_is_pressed = False
+
+                if keyboard.is_pressed(key):
+                    key_is_pressed = True
+                else:
+                    if key_is_int:
+                        key_str = chr(key)
+                        if keyboard.is_pressed(key_str):
+                            key_is_pressed = True
+                        elif keyboard.is_pressed(key_str.lower()):
+                            key_is_pressed = True
+
+                    elif keyboard.is_pressed(key.lower()):
+                        key_is_pressed = True
+
+                return key_is_pressed
+
+            else:
+                raise ValueError(self.__name__ + '.library')
+
+        else:
+            raise TypeError('key')
 
 
 def load_yolo(dir_model):
@@ -387,9 +452,7 @@ def detect_video(
     if timeout is None:
         timeout = math.inf
 
-    if quit_key is None:
-        pass
-    elif isinstance(quit_key, (str, int)):
+    if (quit_key is None) or isinstance(quit_key, (str, int)):
         pass
     else:
         raise TypeError('quit_key')
@@ -409,6 +472,8 @@ def detect_video(
 
     capturing = True
 
+    keyboard_listener = KeyboardListener()
+
     if isinstance(source, int):
         # start the model by processing one image
         success, image = cap.read()
@@ -417,10 +482,9 @@ def detect_video(
 
     while capturing:
 
-        if os.geteuid() == 0:
-            if keyboard.is_pressed(quit_key):
-                print('The Quitting Key was pressed. Quitting ...')
-                capturing = False
+        if keyboard_listener.is_pressed(quit_key):
+            print('The Quitting Key was pressed. Quitting ...')
+            capturing = False
 
         elif (t * spf) > timeout:
             print('Timeout')
@@ -446,17 +510,17 @@ def detect_video(
                 if write_out_video:
                     video_writer.write(image)
 
-                if isinstance(source, int) or show:
-                    if timer is None:
-                        timer = cp.clock.Timer(ticks_per_sec=fps)
-                    else:
-                        timer.wait()
-
                 if show:
                     cv2.imshow(winname='Image', mat=image)
                     cv2.pollKey()
 
                 t += 1
+
+                if isinstance(source, int) or show:
+                    if timer is None:
+                        timer = cp.clock.Timer(ticks_per_sec=fps)
+                    else:
+                        timer.wait()
 
             else:
                 print('Can\'t receive frame (stream end?). Exiting ...')
@@ -561,9 +625,7 @@ def capture_video(source, dir_out_video=None, show=False, size=None, fps=None, t
     if timeout is None:
         timeout = math.inf
 
-    if quit_key is None:
-        pass
-    elif isinstance(quit_key, (str, int)):
+    if (quit_key is None) or isinstance(quit_key, (str, int)):
         pass
     else:
         raise TypeError('quit_key')
@@ -583,12 +645,13 @@ def capture_video(source, dir_out_video=None, show=False, size=None, fps=None, t
 
     capturing = True
 
+    keyboard_listener = KeyboardListener()
+
     while capturing:
 
-        if os.geteuid() == 0:
-            if keyboard.is_pressed(quit_key):
-                print('The Quitting Key was pressed. Quitting ...')
-                capturing = False
+        if keyboard_listener.is_pressed(quit_key):
+            print('The Quitting Key was pressed. Quitting ...')
+            capturing = False
 
         elif (t * spf) > timeout:
             print('Timeout')
@@ -605,17 +668,17 @@ def capture_video(source, dir_out_video=None, show=False, size=None, fps=None, t
                 if write_out_video:
                     video_writer.write(image)
 
-                if isinstance(source, int) or show:
-                    if timer is None:
-                        timer = cp.clock.Timer(ticks_per_sec=fps)
-                    else:
-                        timer.wait()
-
                 if show:
                     cv2.imshow(winname='Image', mat=image)
                     cv2.pollKey()
 
                 t += 1
+
+                if isinstance(source, int) or show:
+                    if timer is None:
+                        timer = cp.clock.Timer(ticks_per_sec=fps)
+                    else:
+                        timer.wait()
 
             else:
                 print('Can\'t receive frame (stream end?). Exiting ...')
