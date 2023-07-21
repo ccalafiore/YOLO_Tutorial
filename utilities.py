@@ -53,28 +53,22 @@ def load_yolos(dirs_models, n_workers=None):
     return yolos
 
 
-def download_yolo(name, dir_root=None):
+def download_yolo(dir_model):
 
     """
 
-    :param name:
-    :type name: str
-    :param dir_root:
-    :type dir_root: None| str
+    :param dir_model:
+    :type dir_model: str
     :return:
     :rtype: YOLO
     """
 
-    if dir_root is None:
+    dir_root, name_yolo = os.path.split(dir_model)
+    if len(dir_root) == 0:
         dir_root = os.getcwd()
+        dir_model = os.path.join(dir_root, name_yolo)
     else:
         os.makedirs(dir_root, exist_ok=True)
-
-    dir_model = os.path.join(dir_root, name)
-
-    suffix = pathlib.Path(dir_model).suffix
-    if len(suffix) == 0:
-        dir_model += '.pt'
 
     if os.path.exists(dir_model):
         os.remove(dir_model)
@@ -84,25 +78,20 @@ def download_yolo(name, dir_root=None):
     return yolo
 
 
-def download_yolos(names, dirs_roots=None, n_workers=None):
+def download_yolos(dirs_models, n_workers=None):
 
     """
 
-    :param names:
-    :type names: list | tuple | np.ndarray
-    :param dirs_roots:
-    :type dirs_roots: None| list | tuple | np.ndarray
+    :param dirs_models:
+    :type dirs_models: list | tuple | np.ndarray
     :param n_workers:
     :type n_workers: None | int
     :return:
     :rtype: list | tuple | np.ndarray
     """
 
-    n_yolos = len(names)
-    if dirs_roots is None:
-        kwargs = [dict(name=names[i]) for i in range(0, n_yolos, 1)]
-    else:
-        kwargs = [dict(name=names[i], dir_root=dirs_roots[i]) for i in range(0, n_yolos, 1)]
+    n_yolos = len(dirs_models)
+    kwargs = [dict(dir_model=dirs_models[i]) for i in range(0, n_yolos, 1)]
 
     yolos = cp.threading.MultiThreads(
         func=download_yolo, args=None, kwargs=kwargs, n_workers=n_workers, names=None).run()
