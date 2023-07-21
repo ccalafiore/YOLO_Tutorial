@@ -26,7 +26,7 @@ dir_out_video = None
 box_drawer = utilities.BoxDrawer(names=yolo_v.model.names, colors=None, threshold=(255 * .3))
 
 size = 1280, 720
-fps = 10
+fps = 1
 
 quitting_key = 'q'
 # timeout = 10  # in secs

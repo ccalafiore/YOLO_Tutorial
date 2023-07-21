@@ -9,3 +9,4 @@ opencv-python~=4.8.0.74
 distinctipy~=1.2.2
 torch~=2.0.1
 keyboard~=0.13.5
+pynput~=1.7.6

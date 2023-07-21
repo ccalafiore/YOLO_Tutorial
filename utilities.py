@@ -42,7 +42,7 @@ class KeyboardListener:
                 # The event listener will be running in this block
                 with keyboard.Events() as events:
                     # Block at most one second
-                    event = events.get(0.0)
+                    event = events.get(0.005)
                     if event is None:
                         return False
                     elif key_is_int:
